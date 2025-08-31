@@ -48,6 +48,58 @@ msgstr "Se encontraron %d números de teléfono únicos."
 msgid "No phone numbers found."
 msgstr "No se encontraron números de teléfono."
 
+#: phone-number-cleanup.php
+msgid "Note: Extracted phone numbers will be stored in our database. If you are logged in, they will be associated with your account."
+msgstr "Nota: Los números de teléfono extraídos se almacenarán en nuestra base de datos. Si has iniciado sesión, se asociarán con tu cuenta."
+
+#: phone-number-cleanup.php
+msgid "Your Previously Extracted Numbers"
+msgstr "Tus números extraídos anteriormente"
+
+#: phone-number-cleanup.php
+msgid "Extracted Phone Numbers"
+msgstr "Números de teléfono extraídos"
+
+#: phone-number-cleanup.php
+msgid "Phone Numbers"
+msgstr "Números de teléfono"
+
+#: phone-number-cleanup.php
+msgid "This page shows the most recent 1000 phone numbers extracted by users."
+msgstr "Esta página muestra los 1000 números de teléfono más recientes extraídos por los usuarios."
+
+#: phone-number-cleanup.php
+msgid "No phone numbers have been extracted yet."
+msgstr "Aún no se han extraído números de teléfono."
+
+#: phone-number-cleanup.php
+msgid "Time"
+msgstr "Hora"
+
+#: phone-number-cleanup.php
+msgid "User"
+msgstr "Usuario"
+
+#: phone-number-cleanup.php
+msgid "IP Address"
+msgstr "Dirección IP"
+
+#: phone-number-cleanup.php
+msgid "Number (E.164)"
+msgstr "Número (E.164)"
+
+#: phone-number-cleanup.php
+msgid "Original Format"
+msgstr "Formato original"
+
+#: phone-number-cleanup.php
+msgid "Unknown User"
+msgstr "Usuario desconocido"
+
+#: phone-number-cleanup.php
+msgid "Guest"
+msgstr "Invitado"
+
 #: block/block.json
 msgid "Phone Number Clean Up"
 msgstr "Limpieza de números de teléfono"

@@ -4,7 +4,7 @@
 
 This repository and plugin is an experiment in AI coding. Please use with caution.
 
-**Phone Number Clean Up** is a WordPress plugin that allows users to extract phone numbers from a block of text. The plugin provides a public-facing form via shortcode or Gutenberg block where users can paste text and receive a list of unique, normalized phone numbers (currently USA + Spain). No data is sent offsite.
+**Phone Number Clean Up** is a WordPress plugin that allows users to extract phone numbers from a block of text. The plugin provides a public-facing form via shortcode or Gutenberg block where users can paste text and receive a list of unique, normalized phone numbers (currently USA + Spain). All extracted phone numbers are stored in the database for future reference.
 
 ---
 
@@ -18,7 +18,9 @@ This repository and plugin is an experiment in AI coding. Please use with cautio
 - Input length limits and basic rate limiting (to mitigate abuse)
 - Security hardening: nonces, sanitization, escaping
 - Internationalization (English + Spanish provided) – easily extendable
-- Privacy friendly: no storage, no external API calls
+- Storage of extracted phone numbers in database
+- Admin interface to view extracted numbers
+- For logged-in users, numbers are associated with their account and displayed on future visits
 
 ---
 
@@ -29,6 +31,7 @@ This repository and plugin is an experiment in AI coding. Please use with cautio
    git clone https://github.com/mrhobbeys/phone-number-clean-up.git
    ```
 2. In your WordPress dashboard, go to **Plugins** and activate **Phone Number Clean Up**.
+3. Important: Review the privacy considerations in PRIVACY.md and update your site's privacy policy accordingly.
 
 If using the block editor, the block will appear under Widgets after activation.
 
@@ -46,6 +49,9 @@ Parameters:
 ### Gutenberg Block
 Insert the block "Phone Number Clean Up" and toggle the "Show normalized numbers" option in the sidebar.
 
+### Admin View
+Administrators can view all extracted phone numbers under Tools > Phone Numbers in the WordPress admin.
+
 ---
 
 ## How It Works
@@ -53,6 +59,16 @@ Insert the block "Phone Number Clean Up" and toggle the "Show normalized numbers
 - Plugin scans for US and Spanish phone number patterns.
 - Numbers are normalized to E.164 and deduplicated.
 - Results (unique) are displayed on the same page.
+- Numbers are stored in the database for future reference.
+- Logged-in users can see their previously extracted numbers.
+
+---
+
+## Privacy Considerations
+This plugin stores extracted phone numbers in your WordPress database. 
+If you use this plugin on a public site, you should update your privacy policy to reflect this data collection.
+
+See the [PRIVACY.md](PRIVACY.md) file for recommended privacy policy text and regulatory considerations.
 
 ---
 
@@ -62,6 +78,7 @@ Insert the block "Phone Number Clean Up" and toggle the "Show normalized numbers
 - Client-side extraction (JS) for instant feedback
 - Settings page for customization
 - Unit tests (regex & extraction performance)
+- Data retention policy configuration
 
 ---
 
