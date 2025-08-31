@@ -1,0 +1,21 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 2,
+  "name": "phone-number-clean-up/form",
+  "version": "1.0.0",
+  "title": "Phone Number Clean Up",
+  "category": "widgets",
+  "icon": "phone",
+  "description": "Form to extract phone numbers (US + Spain).",
+  "textdomain": "phone-number-clean-up",
+  "attributes": {
+    "showNormalized": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "supports": {
+    "html": false
+  },
+  "editorScript": "pnc-block-editor"
+}

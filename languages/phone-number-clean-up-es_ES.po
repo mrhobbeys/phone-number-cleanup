@@ -1,0 +1,65 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: phone-number-clean-up 1.1.0\n"
+"POT-Creation-Date: 2024-08-31 00:00+0000\n"
+"Language: es_ES\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: AI\n"
+
+#: phone-number-cleanup.php
+msgid "Paste your text here"
+msgstr "Pega tu texto aquí"
+
+#: phone-number-cleanup.php
+msgid "Paste your text here..."
+msgstr "Pega tu texto aquí..."
+
+#: phone-number-cleanup.php
+msgid "Extract Phone Numbers"
+msgstr "Extraer números de teléfono"
+
+#: phone-number-cleanup.php
+msgid "Security check failed. Please reload the page and try again."
+msgstr "La comprobación de seguridad falló. Recarga la página e inténtalo de nuevo."
+
+#: phone-number-cleanup.php
+msgid "Rate limit exceeded. Please wait and try again later."
+msgstr "Se superó el límite de intentos. Espera e inténtalo de nuevo más tarde."
+
+#: phone-number-cleanup.php
+msgid "No input provided."
+msgstr "No se proporcionó texto."
+
+#: phone-number-cleanup.php
+msgid "Input too long (max %s characters)."
+msgstr "Texto demasiado largo (máximo %s caracteres)."
+
+#: phone-number-cleanup.php
+msgid "Found Phone Numbers"
+msgstr "Números de teléfono encontrados"
+
+#: phone-number-cleanup.php
+msgid "%d unique phone number(s) found."
+msgstr "Se encontraron %d números de teléfono únicos."
+
+#: phone-number-cleanup.php
+msgid "No phone numbers found."
+msgstr "No se encontraron números de teléfono."
+
+#: block/block.json
+msgid "Phone Number Clean Up"
+msgstr "Limpieza de números de teléfono"
+
+#: block/editor.js
+msgid "Settings"
+msgstr "Ajustes"
+
+#: block/editor.js
+msgid "Show normalized numbers"
+msgstr "Mostrar números normalizados"
+
+#: block/editor.js
+msgid "Phone Number Clean Up form will render on the front end."
+msgstr "El formulario de limpieza de números de teléfono se mostrará en el frontal."

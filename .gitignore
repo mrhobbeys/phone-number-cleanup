@@ -46,3 +46,19 @@ wp-config.php
 # Note: If you wish to whitelist themes,
 # uncomment the next line
 #/wp-content/themes
+
+# ========== Visual Studio Ignores ==========
+.vs/
+*.vsidx
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# ========== Visual Studio Code (Optional) ==========
+.vscode/
+.history/
+
+# ========== OS-specific ==========
+.DS_Store
+Thumbs.db
