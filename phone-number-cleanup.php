@@ -2,7 +2,7 @@
 /*
 Plugin Name: Phone Number Clean Up
 Description: Extracts phone numbers from pasted text on a public page.
-Version: 1.1.0
+Version: 1.2.0
 Author: mrhobbeys
 Text Domain: phone-number-clean-up
 Domain Path: /languages
@@ -24,6 +24,33 @@ function pnc_load_textdomain() {
     load_plugin_textdomain( 'phone-number-clean-up', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 }
 add_action( 'init', 'pnc_load_textdomain' );
+
+/**
+ * Plugin activation: create database table
+ */
+function pnc_plugin_activation() {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'pnc_extracted_numbers';
+    
+    $charset_collate = $wpdb->get_charset_collate();
+    
+    $sql = "CREATE TABLE $table_name (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        time datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
+        user_id bigint(20) DEFAULT 0 NOT NULL,
+        ip varchar(45) NOT NULL,
+        normalized_number varchar(20) NOT NULL,
+        raw_number varchar(30) NOT NULL,
+        PRIMARY KEY  (id),
+        KEY user_id (user_id),
+        KEY ip (ip),
+        KEY normalized_number (normalized_number)
+    ) $charset_collate;";
+    
+    require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+    dbDelta( $sql );
+}
+register_activation_hook( __FILE__, 'pnc_plugin_activation' );
 
 /**
  * Simple IP based rate limiting using transients.
@@ -57,11 +84,11 @@ function pnc_extract_numbers_from_text( $text ) {
     // US: optional +1, separators space . - parentheses; 10 digits core.
     $pattern_us = '/(?:(?:\+?1)[-\.\s]?)?\(?\d{3}\)?[-\.\s]?\d{3}[-\.\s]?\d{4}\b/';
     // Spain: optional +34 / 0034, then 9 digits starting with 6,7,8,9 possibly separated by spaces.
-    $pattern_es = '/(?:(?:\+34|0034)[\s-]?)?(?:[6789]\s?\d(?:\s?\d){7})/';
+    $pattern_spain = '/(?:(?:\+34|0034)[\s-]?)?(?:[6789]\s?\d(?:\s?\d){7})/';
 
     $all_matches = [];
     preg_match_all( $pattern_us, $text, $us_matches );
-    preg_match_all( $pattern_es, $text, $es_matches );
+    preg_match_all( $pattern_spain, $text, $es_matches );
     if ( ! empty( $us_matches[0] ) ) {
         $all_matches = array_merge( $all_matches, $us_matches[0] );
     }
@@ -91,6 +118,73 @@ function pnc_extract_numbers_from_text( $text ) {
 }
 
 /**
+ * Store extracted phone numbers to database
+ */
+function pnc_store_numbers( $numbers ) {
+    if ( empty( $numbers ) ) {
+        return;
+    }
+    
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'pnc_extracted_numbers';
+    $user_id = get_current_user_id();
+    $ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
+    $time = current_time( 'mysql' );
+    
+    // Save to database for all users
+    foreach ( $numbers as $normalized => $raw ) {
+        $wpdb->insert(
+            $table_name,
+            array(
+                'time' => $time,
+                'user_id' => $user_id,
+                'ip' => $ip,
+                'normalized_number' => $normalized,
+                'raw_number' => $raw,
+            ),
+            array( '%s', '%d', '%s', '%s', '%s' )
+        );
+    }
+    
+    // For logged in users, also store in user meta
+    if ( $user_id ) {
+        $existing = get_user_meta( $user_id, 'pnc_extracted_numbers', true );
+        if ( ! is_array( $existing ) ) {
+            $existing = array();
+        }
+        
+        // Merge with existing numbers, keeping the format normalized => raw
+        $updated = array_merge( $existing, $numbers );
+        
+        // Limit to most recent 1000 numbers to prevent metadata bloat
+        if ( count( $updated ) > 1000 ) {
+            $updated = array_slice( $updated, -1000, 1000, true );
+        }
+        
+        update_user_meta( $user_id, 'pnc_extracted_numbers', $updated );
+    }
+    
+    return count( $numbers );
+}
+
+/**
+ * Get previously extracted numbers for the current user
+ */
+function pnc_get_user_numbers() {
+    $user_id = get_current_user_id();
+    if ( ! $user_id ) {
+        return array();
+    }
+    
+    $numbers = get_user_meta( $user_id, 'pnc_extracted_numbers', true );
+    if ( ! is_array( $numbers ) ) {
+        return array();
+    }
+    
+    return $numbers;
+}
+
+/**
  * Render the public form and handle submission.
  */
 function pnc_render_form( $atts = [] ) {
@@ -106,6 +200,13 @@ function pnc_render_form( $atts = [] ) {
     $submit_name = 'pnc_submit_' . $id_suffix;
 
     $output = '';
+    $output .= '<div class="pnc-container">';
+    
+    // Data collection notice
+    $output .= '<div class="pnc-notice">';
+    $output .= '<p>' . esc_html__( 'Note: Extracted phone numbers will be stored in our database. If you are logged in, they will be associated with your account.', 'phone-number-clean-up' ) . '</p>';
+    $output .= '</div>';
+    
     $output .= '<form method="post" id="' . esc_attr( $form_id ) . '">';
     $output .= '<div>';
     $output .= '<label for="' . esc_attr( $textarea_name ) . '">' . esc_html__( 'Paste your text here', 'phone-number-clean-up' ) . '</label><br />';
@@ -139,6 +240,9 @@ function pnc_render_form( $atts = [] ) {
         $input = sanitize_textarea_field( $input_raw );
         $numbers = pnc_extract_numbers_from_text( $input );
         if ( ! empty( $numbers ) ) {
+            // Store numbers in database
+            pnc_store_numbers( $numbers );
+            
             $output .= '<h3>' . esc_html__( 'Found Phone Numbers', 'phone-number-clean-up' ) . '</h3>';
             $output .= '<ul>';
             foreach ( $numbers as $normalized => $raw ) {
@@ -151,7 +255,25 @@ function pnc_render_form( $atts = [] ) {
             $output .= '<p>' . esc_html__( 'No phone numbers found.', 'phone-number-clean-up' ) . '</p>';
         }
     }
-
+    
+    // Display previously saved numbers for logged-in users
+    if ( is_user_logged_in() ) {
+        $saved_numbers = pnc_get_user_numbers();
+        if ( ! empty( $saved_numbers ) ) {
+            $output .= '<div class="pnc-saved-numbers">';
+            $output .= '<h3>' . esc_html__( 'Your Previously Extracted Numbers', 'phone-number-clean-up' ) . '</h3>';
+            $output .= '<ul>';
+            foreach ( $saved_numbers as $normalized => $raw ) {
+                $display = $show_normalized ? $normalized . ' (' . $raw . ')' : $raw;
+                $output .= '<li>' . esc_html( $display ) . '</li>';
+            }
+            $output .= '</ul>';
+            $output .= '</div>';
+        }
+    }
+    
+    $output .= '</div>'; // close container
+    
     return $output;
 }
 
@@ -181,5 +303,69 @@ function pnc_register_block() {
     ] );
 }
 add_action( 'init', 'pnc_register_block' );
+
+// Add admin page to view all stored numbers (admin only)
+function pnc_admin_menu() {
+    add_management_page(
+        __( 'Extracted Phone Numbers', 'phone-number-clean-up' ),
+        __( 'Phone Numbers', 'phone-number-clean-up' ),
+        'manage_options',
+        'pnc-numbers',
+        'pnc_admin_page'
+    );
+}
+add_action( 'admin_menu', 'pnc_admin_menu' );
+
+// Admin page callback
+function pnc_admin_page() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
+    
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'pnc_extracted_numbers';
+    $numbers = $wpdb->get_results( "SELECT * FROM $table_name ORDER BY time DESC LIMIT 1000", ARRAY_A );
+    
+    ?>
+    <div class="wrap">
+        <h1><?php echo esc_html__( 'Extracted Phone Numbers', 'phone-number-clean-up' ); ?></h1>
+        <p><?php echo esc_html__( 'This page shows the most recent 1000 phone numbers extracted by users.', 'phone-number-clean-up' ); ?></p>
+        
+        <?php if ( empty( $numbers ) ) : ?>
+            <p><?php echo esc_html__( 'No phone numbers have been extracted yet.', 'phone-number-clean-up' ); ?></p>
+        <?php else : ?>
+            <table class="widefat striped">
+                <thead>
+                    <tr>
+                        <th><?php echo esc_html__( 'Time', 'phone-number-clean-up' ); ?></th>
+                        <th><?php echo esc_html__( 'User', 'phone-number-clean-up' ); ?></th>
+                        <th><?php echo esc_html__( 'IP Address', 'phone-number-clean-up' ); ?></th>
+                        <th><?php echo esc_html__( 'Number (E.164)', 'phone-number-clean-up' ); ?></th>
+                        <th><?php echo esc_html__( 'Original Format', 'phone-number-clean-up' ); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ( $numbers as $row ) : ?>
+                        <tr>
+                            <td><?php echo esc_html( $row['time'] ); ?></td>
+                            <td>
+                                <?php if ( $row['user_id'] ) : ?>
+                                    <?php $user = get_userdata( $row['user_id'] ); ?>
+                                    <?php echo $user ? esc_html( $user->display_name ) : esc_html__( 'Unknown User', 'phone-number-clean-up' ); ?>
+                                <?php else : ?>
+                                    <?php echo esc_html__( 'Guest', 'phone-number-clean-up' ); ?>
+                                <?php endif; ?>
+                            </td>
+                            <td><?php echo esc_html( $row['ip'] ); ?></td>
+                            <td><?php echo esc_html( $row['normalized_number'] ); ?></td>
+                            <td><?php echo esc_html( $row['raw_number'] ); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
+    </div>
+    <?php
+}
 
 // End of file
